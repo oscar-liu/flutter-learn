@@ -24,29 +24,50 @@ class MyApp extends StatelessWidget {
     // );
     return new MaterialApp(
       title: 'Starup Name Generator',
+      // 添加主题UI
+      theme: new ThemeData(
+        primaryColor: Colors.blue
+      ),
       home: new RandomWords(),
     );
   }
 }
 
+// 随机字符类继承动态Widget类
 class RandomWords extends StatefulWidget {
   @override
   createState() => new RandomWordsState();
 }
 
+// 随机字符类继承State
 class RandomWordsState extends State<RandomWords> {
   @override
-  final _suggestions = <WordPair>[];
-  final _biggerFont = const TextStyle(fontSize: 18.0);
+  final _suggestions = <WordPair>[];  // 声明一个字符类数组
+  final _saved = new Set<WordPair>(); // Set集合类，用来存储所选择的数据
+  final _biggerFont = const TextStyle(fontSize: 18.0); // 样式
 
   Widget _buildRow(WordPair pair) {
-      return new ListTile(
-        title: new Text(
-          pair.asPascalCase,
-          style: _biggerFont,
-        )
-      );
-    }
+    final alredySaved = _saved.contains(pair); // 检查确保单词对还没有添加到收藏夹中
+    return new ListTile(
+      title: new Text(
+        pair.asPascalCase,
+        style: _biggerFont,
+      ),
+      trailing: new Icon(
+        alredySaved ? Icons.favorite : Icons.favorite_border, // 三元判断有则添加一个红心icon
+        color: alredySaved ? Colors.red : null,
+      ),
+      onTap: () {
+        setState(() {
+          if(alredySaved) {
+            _saved.remove(pair);
+          } else {
+            _saved.add(pair);
+          }
+        });
+      },
+    );
+  }
 
   Widget _buildSuggestions() {
     return new ListView.builder(
@@ -70,12 +91,46 @@ class RandomWordsState extends State<RandomWords> {
 
   }
 
+  // 添加路由
+  void _pushSaved() {
+    // 添加Navigator.push调用，使路由入栈（
+    Navigator.of(context).push(
+      // 新建路由
+      new MaterialPageRoute(builder: (context) {
+        final tiles = _saved.map(
+          (pair) {
+            return new ListTile(
+              title: new Text(
+                pair.asPascalCase,
+                style: _biggerFont
+              ),
+            );
+          }
+        );
+        final divided = ListTile.divideTiles(
+          context: context,
+          tiles: tiles,
+        ).toList();
+
+        return new Scaffold(
+          appBar: new AppBar(
+            title: new Text('Saved Suggestions'),
+          ),
+          body: new ListView(children: divided),
+        );
+      })
+    );
+  }
+
   Widget build(BuildContext context) {
     // final wordPair = new WordPair.random();
     // return new Text(wordPair.asPascalCase);
     return new Scaffold(
       appBar: new AppBar(
         title: new Text('Startup Name Generator'),
+        actions: <Widget>[
+          new IconButton(icon: new Icon(Icons.list), onPressed: _pushSaved)
+        ],
       ),
       body: _buildSuggestions()
     );
